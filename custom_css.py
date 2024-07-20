@@ -9,7 +9,7 @@ def add_custom_css():
         background-color: #1b1b1b;  /* Dark background for the chalkboard effect */
         color: #f5f5f5;  /* Light chalk-like color for text */
         font-family: 'Permanent Marker', cursive;  /* Chalk-like font */
-        cursor: url('chalk_cursor.png'), auto;  /* Custom cursor */
+        cursor: url('chalk_cursor.png'),auto;
     }
     .stTextArea, .stSlider, .stButton, .stTextInput, .stTitle, .stHeader, .stMarkdown {
         color: #f5f5f5;  /* Chalk-like color for text */
@@ -25,7 +25,7 @@ def add_custom_css():
         color: #f5f5f5;  /* Chalk-like color for text */
         border: 2px solid #8B4513;  /* Wooden border */
         padding: 8px 16px;  /* Padding for buttons */
-        cursor: pointer;  /* Pointer cursor on hover */
+        cursor: url('chalk_cursor.png'),auto;
         transition: background-color 0.3s ease;
     }
     .stButton button:hover, .stTextArea textarea:hover, .stTextInput input:hover {
@@ -82,7 +82,7 @@ def add_custom_css():
         height: 100px;
         width: 90px;
         border-radius: 4px;
-        cursor: pointer;
+        cursor: url('chalk_cursor.png'),auto;
         color: #f5f5f5;  /* Chalk-like color for days */
         transition: background-color 0.3s ease;
     }

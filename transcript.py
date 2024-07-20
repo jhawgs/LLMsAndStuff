@@ -1,3 +1,19 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
+from llama_index.readers.assemblyai import AssemblyAIAudioTranscriptReader
+import assemblyai as aai
+import pandas as pd
+from llama_index.core.llama_pack import download_llama_pack
+from ollama_interface import gen
+import streamlit as st
+from docx import Document
+from io import BytesIO
+from fpdf import FPDF
+from custom_css import add_custom_css
+from custom_html import add_custom_html
+from mongodb_handler import save_notes, get_notes_by_subject, get_subjects  # Updated import
 from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
 from llama_index.readers.assemblyai import AssemblyAIAudioTranscriptReader
 import pandas as pd
@@ -10,9 +26,9 @@ from fpdf import FPDF
 from custom_css import add_custom_css
 from custom_html import add_custom_html
 from audio_extract import extract_audio
+import os
 
-
-API_KEY = ""
+API_KEY = "68b5e00bfac44433b2abc29dcf1aacaf"
 
 # Set page configuration
 st.set_page_config(
@@ -21,9 +37,11 @@ st.set_page_config(
     layout="centered"
 )
 
+
 def transcribeVideo(path):
     convertV2A(path)
     text = transcribe_local_audio("./outputAudio.mp3")
+    os.system("rm ./outputAudio.mp3")
     print(text)
 
 def convertV2A(inputVideoFile):
@@ -56,8 +74,6 @@ def save_as_pdf(text):
 
 def main():
     # Add custom CSS
-    transcribeVideo("/Users/davidstutz/Desktop/LLMsAndStuff/stanml.mp4")
-    '''
     add_custom_css()
 
     st.title("Chalkboard.ai")
@@ -69,7 +85,13 @@ def main():
 
     # Slider for detail level
     detail_level = st.slider("Detail Level", 1, 10, 5)
-    
+
+    # Input for subject
+    subject = st.text_input("Enter subject for the notes:")
+
+    # Input for note name
+    note_name = st.text_input("Enter a name for the notes:")
+
     if st.button("Generate Notes"):
         if links:
             with st.spinner("Loading transcripts..."):
@@ -103,6 +125,10 @@ def main():
             st.markdown("### Generated Notes")
             st.text_area("Notes", value=notes, height=1200)
 
+            if subject and note_name:
+                # Save the notes to MongoDB
+                save_notes(subject, note_name, notes)
+
             # Save the notes as a .docx file
             docx_buffer = save_as_docx(notes)
             st.download_button(
@@ -120,7 +146,35 @@ def main():
                 file_name="Generated_Notes.pdf",
                 mime="application/pdf"
             )
+
+    # View notes by subject
+    st.subheader("View Notes by Subject")
+    subjects = get_subjects()
+
+    if st.button("All Notes"):
+        notes_list = get_notes_by_subject()
+        if notes_list:
+            for note in notes_list:
+                note_name = note.get("note_name", "Unnamed Note")
+                with st.expander(f"{note_name} ({note['subject']}) - Click to Expand/Collapse"):
+                    st.text_area("Notes", value=note["notes"], height=400)
+                    if st.button("Close", key=f"close_{note['_id']}"):
+                        st.text_area("Notes", value="", height=0)
+
+    for subj in subjects:
+        if st.button(subj):
+            notes_list = get_notes_by_subject(subj)
+            if notes_list:
+                for note in notes_list:
+                    note_name = note.get("note_name", "Unnamed Note")
+                    with st.expander(f"{note_name} - Click to Expand/Collapse"):
+                        st.text_area("Notes", value=note["notes"], height=400)
+                        if st.button("Close", key=f"close_{note['_id']}"):
+                            st.text_area("Notes", value="", height=0)
+            else:
+                st.warning(f"No notes found for subject: {subj}")
+
     add_custom_html()
-    '''
+
 if __name__ == "__main__":
     main()

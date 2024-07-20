@@ -1,4 +1,5 @@
 import streamlit as st
+
 def add_custom_html():
     st.markdown("""
     <div class="calendar-container">
@@ -48,4 +49,5 @@ def add_custom_html():
             </div>
         </div>
     </div>
+    <div class="chalk-piece"></div>
     """, unsafe_allow_html=True)

@@ -1,63 +1,68 @@
 import streamlit as st
+
 def add_custom_css():
     st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+
     body {
-        background-color: #000000;  /* Black background for the entire page */
-        color: #FFFFFF;  /* White text color */
-        font-family: Arial, sans-serif;  /* Default font */
+        background-color: #1b1b1b;  /* Dark background for the chalkboard effect */
+        color: #f5f5f5;  /* Light chalk-like color for text */
+        font-family: 'Permanent Marker', cursive;  /* Chalk-like font */
     }
-    .stTextArea, .stSlider, .stButton {
-        color: #FFFFFF;  /* White text color */
-        border: none;  /* No border */
+    .stTextArea, .stSlider, .stButton, .stTextInput, .stTitle, .stHeader, .stMarkdown {
+        color: #f5f5f5;  /* Chalk-like color for text */
+        background-color: #1b1b1b;  /* Dark background */
+        border: 2px solid #8B4513;  /* Wooden border */
+        border-radius: 4px;
+        padding: 10px;
+        box-shadow: 3px 3px 5px #000000;
+        transition: transform 0.3s ease-in-out;
     }
-    .stTextArea textarea, .stTextInput input {
-        /* No specific styles defined here */
-    }
-    .stButton button {
-        background-color: #333333;  /* Dark gray background for buttons */
-        color: #FFFFFF;  /* White text color for buttons */
+    .stButton button, .stTextArea textarea, .stTextInput input {
+        background-color: #1b1b1b;  /* Dark background for buttons and inputs */
+        color: #f5f5f5;  /* Chalk-like color for text */
+        border: 2px solid #8B4513;  /* Wooden border */
         padding: 8px 16px;  /* Padding for buttons */
         cursor: pointer;  /* Pointer cursor on hover */
+        transition: background-color 0.3s ease;
     }
-    .stButton button:hover {
-        background-color: #555555;  /* Lighter gray background when hovering over buttons */
+    .stButton button:hover, .stTextArea textarea:hover, .stTextInput input:hover {
+        background-color: #2c2c2c;  /* Darker background on hover */
     }
     .stTitle {
-        color: #CCCCCC;  /* Light gray color for titles */
+        color: #f5f5f5;  /* Chalk-like color for titles */
         font-size: 2em;  /* Larger font size for titles */
         margin-bottom: 20px;  /* Bottom margin for separation */
         text-align: center;  /* Center align title */
     }
     .stHeader {
-        color: #CCCCCC;  /* Light gray color for headers */
+        color: #f5f5f5;  /* Chalk-like color for headers */
         opacity: 0.7;  /* Semi-faded header */
     }
     .stMarkdown h1,
     .stMarkdown h2 {
-        color: #CCCCCC;  /* Light gray color for markdown headers */
+        color: #f5f5f5;  /* Chalk-like color for markdown headers */
     }
     .calendar-container {
         padding-top: 100px;
         display: flex;
-        justify-content: right;
+        justify-content: center;
         align-items: center;
         margin-bottom: 20px;
     }
     .calendar {
-        justify-content: center;
         display: flex;
         flex-wrap: wrap;
-        border: 0px solid #CCCCCC;
+        border: 2px solid #8B4513;  /* Wooden border for calendar */
         border-radius: 8px;
         overflow: hidden;
         width: 100%;
         max-width: 800px;  /* Adjust width as needed */
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
     .calendar-header {
-        
-        color: #FFFFFF;
+        color: #f5f5f5;  /* Chalk-like color for header */
         font-weight: bold;
         text-align: center;
         padding: 10px;
@@ -66,8 +71,8 @@ def add_custom_css():
     .calendar-body {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 0px;
-        padding: 1 px;
+        gap: 0;
+        padding: 1px;
     }
     .calendar-day {
         display: flex;
@@ -77,10 +82,21 @@ def add_custom_css():
         width: 90px;
         border-radius: 4px;
         cursor: pointer;
-        color: #FFFF;  /* Black text color */
+        color: #f5f5f5;  /* Chalk-like color for days */
+        transition: background-color 0.3s ease;
     }
     .calendar-day:hover {
-        background-color: #CCCCCC;
+        background-color: #2c2c2c;  /* Darker background on hover */
+    }
+    .chalk-piece {
+        width: 10px;
+        height: 30px;
+        background-color: white;
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        transform: rotate(-45deg);
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
     }
     </style>
     """, unsafe_allow_html=True)

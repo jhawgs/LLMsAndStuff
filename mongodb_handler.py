@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 import streamlit as st
+from bson.objectid import ObjectId
 
 # MongoDB connection setup
 def get_db_connection():
@@ -36,3 +37,12 @@ def get_subjects():
     notes_collection = db["notes"]
     subjects = notes_collection.distinct("subject")
     return subjects
+
+def delete_note(note_id):
+    db = get_db_connection()
+    notes_collection = db["notes"]
+    result = notes_collection.delete_one({"_id": ObjectId(note_id)})
+    if result.deleted_count == 1:
+        st.success("Notes deleted successfully!")
+    else:
+        st.error("Error: Notes could not be deleted.")

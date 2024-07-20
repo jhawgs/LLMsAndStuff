@@ -13,20 +13,8 @@ from io import BytesIO
 from fpdf import FPDF
 from custom_css import add_custom_css
 from custom_html import add_custom_html
-from mongodb_handler import save_notes, get_notes_by_subject, get_subjects  # Updated import
-from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
-from llama_index.readers.assemblyai import AssemblyAIAudioTranscriptReader
-import pandas as pd
-from llama_index.core.llama_pack import download_llama_pack
-from ollama_interface import gen
-import streamlit as st
-from docx import Document
-from io import BytesIO
-from fpdf import FPDF
-from custom_css import add_custom_css
-from custom_html import add_custom_html
+from mongodb_handler import save_notes, get_notes_by_subject, get_subjects, delete_note  # Updated import
 from audio_extract import extract_audio
-import os
 
 API_KEY = "68b5e00bfac44433b2abc29dcf1aacaf"
 
@@ -37,12 +25,15 @@ st.set_page_config(
     layout="centered"
 )
 
-
-def transcribeVideo(path):
-    convertV2A(path)
+def transcribeVideo(uploaded_file):
+    file_path = f"./{uploaded_file.name}"
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    convertV2A(file_path)
     text = transcribe_local_audio("./outputAudio.mp3")
-    os.system("rm ./outputAudio.mp3")
-    print(text)
+    os.remove(file_path)
+    os.remove("./outputAudio.mp3")
+    return text
 
 def convertV2A(inputVideoFile):
     extract_audio(input_path=inputVideoFile, output_path="./outputAudio.mp3")
@@ -60,12 +51,13 @@ def save_as_docx(text):
     buffer.seek(0)
     return buffer
 
-# Function to save text as .pdf
+# Function to save text as .pdf using a Unicode font
 def save_as_pdf(text):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", size=12)
+    pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
+    pdf.set_font("DejaVu", size=12)
     pdf.multi_cell(0, 10, text)
     buffer = BytesIO()
     pdf.output(buffer)
@@ -79,30 +71,46 @@ def main():
     st.title("Chalkboard.ai")
     st.subheader("Note Taker for YouTube Lectures, Edit Your Notes, and Download")
 
-    # Input for YouTube links
-    links = st.text_area("Enter YouTube links (one per line):")
-    links = links.splitlines()
+    # Create columns for layout
+    col1, col2 = st.columns(2)
 
-    # Slider for detail level
-    detail_level = st.slider("Detail Level", 1, 10, 5)
+    with col1:
+        # File uploader for video file
+        uploaded_file = st.file_uploader("Upload a Video File", type=["mp4", "mkv", "avi", "mov"])
 
-    # Input for subject
-    subject = st.text_input("Enter subject for the notes:")
+    with col2:
+        # Input for YouTube links
+        youtube_links = st.text_area("Enter YouTube links (one per line):")
+        youtube_links = youtube_links.splitlines()
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+        # Slider for detail level
+        detail_level = st.slider("Detail Level", 1, 10, 5)
+
+    with col4:
+        # Input for subject
+        subject = st.text_input("Enter subject for the notes:")
 
     # Input for note name
     note_name = st.text_input("Enter a name for the notes:")
 
     if st.button("Generate Notes"):
-        if links:
-            with st.spinner("Loading transcripts..."):
-                loader = YoutubeTranscriptReader()
-                documents = loader.load_data(ytlinks=links)
+        documents = []
+        if uploaded_file:
+            documents.append(transcribeVideo(uploaded_file))
+        if youtube_links:
+            loader = YoutubeTranscriptReader()
+            youtube_documents = loader.load_data(ytlinks=youtube_links)
+            documents.extend(youtube_documents)
 
+        if documents:
             def doc_to_text(doc):
-                return doc.text
+                return doc[0].text
 
             # Create DataFrame
-            df = pd.DataFrame({"link": links, "doc": list(map(doc_to_text, documents))})
+            df = pd.DataFrame({"source": youtube_links + [uploaded_file.name], "doc": list(map(doc_to_text, documents))})
             df.to_csv("./docs.csv")
 
             # Generate notes using ollama_interface
@@ -135,7 +143,8 @@ def main():
                 label="Download Notes as .docx",
                 data=docx_buffer,
                 file_name="Generated_Notes.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                key="download_docx"
             )
 
             # Save the notes as a .pdf file
@@ -144,35 +153,90 @@ def main():
                 label="Download Notes as .pdf",
                 data=pdf_buffer,
                 file_name="Generated_Notes.pdf",
-                mime="application/pdf"
+                mime="application/pdf",
+                key="download_pdf"
             )
 
     # View notes by subject
     st.subheader("View Notes by Subject")
     subjects = get_subjects()
 
+    # Initialize session state for expanders
+    if "expanders" not in st.session_state:
+        st.session_state.expanders = {}
+
+    # Function to toggle expander state
+    def toggle_expander(subject):
+        if subject in st.session_state.expanders:
+            st.session_state.expanders[subject] = not st.session_state.expanders[subject]
+        else:
+            st.session_state.expanders[subject] = True
+
     if st.button("All Notes"):
         notes_list = get_notes_by_subject()
         if notes_list:
             for note in notes_list:
                 note_name = note.get("note_name", "Unnamed Note")
-                with st.expander(f"{note_name} ({note['subject']}) - Click to Expand/Collapse"):
-                    st.text_area("Notes", value=note["notes"], height=400)
-                    if st.button("Close", key=f"close_{note['_id']}"):
-                        st.text_area("Notes", value="", height=0)
+                note_id = str(note["_id"])  # Convert ObjectId to string for keys
+                with st.expander(f"{note_name} ({note['subject']}) - Click to Expand/Collapse", expanded=st.session_state.expanders.get(note_name, False)):
+                    st.text_area("Notes", value=note["notes"], height=400, key=f"note_{note_id}")
+                    col_download, col_delete = st.columns(2)
+                    with col_download:
+                        docx_buffer = save_as_docx(note["notes"])
+                        st.download_button(
+                            label="Download Notes as .docx",
+                            data=docx_buffer,
+                            file_name=f"{note_name}.docx",
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            key=f"download_docx_{note_id}"
+                        )
+
+                        pdf_buffer = save_as_pdf(note["notes"])
+                        st.download_button(
+                            label="Download Notes as .pdf",
+                            data=pdf_buffer,
+                            file_name=f"{note_name}.pdf",
+                            mime="application/pdf",
+                            key=f"download_pdf_{note_id}"
+                        )
+                    with col_delete:
+                        if st.button("Delete", key=f"delete_{note_id}"):
+                            delete_note(note_id)
+                            st.experimental_rerun()
 
     for subj in subjects:
         if st.button(subj):
+            toggle_expander(subj)
             notes_list = get_notes_by_subject(subj)
             if notes_list:
                 for note in notes_list:
                     note_name = note.get("note_name", "Unnamed Note")
-                    with st.expander(f"{note_name} - Click to Expand/Collapse"):
-                        st.text_area("Notes", value=note["notes"], height=400)
-                        if st.button("Close", key=f"close_{note['_id']}"):
-                            st.text_area("Notes", value="", height=0)
-            else:
-                st.warning(f"No notes found for subject: {subj}")
+                    note_id = str(note["_id"])  # Convert ObjectId to string for keys
+                    with st.expander(f"{note_name} - Click to Expand/Collapse", expanded=st.session_state.expanders.get(subj, False)):
+                        st.text_area("Notes", value=note["notes"], height=400, key=f"note_{note_id}")
+                        col_download, col_delete = st.columns(2)
+                        with col_download:
+                            docx_buffer = save_as_docx(note["notes"])
+                            st.download_button(
+                                label="Download Notes as .docx",
+                                data=docx_buffer,
+                                file_name=f"{note_name}.docx",
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                key=f"download_docx_{note_id}"
+                            )
+
+                            pdf_buffer = save_as_pdf(note["notes"])
+                            st.download_button(
+                                label="Download Notes as .pdf",
+                                data=pdf_buffer,
+                                file_name=f"{note_name}.pdf",
+                                mime="application/pdf",
+                                key=f"download_pdf_{note_id}"
+                            )
+                        with col_delete:
+                            if st.button("Delete", key=f"delete_{note_id}"):
+                                delete_note(note_id)
+                                st.experimental_rerun()
 
     add_custom_html()
 

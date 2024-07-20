@@ -6,6 +6,8 @@ import streamlit as st
 from docx import Document
 from io import BytesIO
 from fpdf import FPDF
+from custom_css import add_custom_css
+from custom_html import add_custom_html
 
 # Set page configuration
 st.set_page_config(
@@ -13,47 +15,6 @@ st.set_page_config(
     page_title="Chalkboard.ai",
     layout="centered"
 )
-
-# Custom CSS for chalkboard theme
-def add_custom_css():
-    st.markdown("""
-    <style>
-    body {
-        background-color: #2E2E2E;
-        color: #FFFFFF;
-    }
-    .stTextArea, .stSlider, .stButton {
-        background-color: #3E3E3E;
-        color: #FFFFFF;
-        border: 1px solid #FFFFFF;
-    }
-    .stTextArea textarea, .stTextInput input {
-        background-color: #2E2E2E;
-        color: #FFFFFF;
-        border: none;
-    }
-    .stButton button {
-        background-color: #4CAF50;
-        color: #FFFFFF;
-        border: none;
-    }
-    .stButton button:hover {
-        background-color: #45a049;
-    }
-    .stTitle {
-        color: #4CAF50;
-    }
-    .stHeader {
-        color: #4CAF50;
-    }
-    .stMarkdown h1 {
-        color: #4CAF50;
-    }
-    .stMarkdown h2 {
-        color: #4CAF50;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 # Function to save text as .docx
 def save_as_docx(text):
@@ -81,7 +42,7 @@ def main():
     add_custom_css()
 
     st.title("Chalkboard.ai")
-    st.subheader("Note Taker for YouTube Lectures, Edit Your Notes, and Download as PDF")
+    st.subheader("Note Taker for YouTube Lectures, Edit Your Notes, and Download")
 
     # Input for YouTube links
     links = st.text_area("Enter YouTube links (one per line):")
@@ -89,7 +50,7 @@ def main():
 
     # Slider for detail level
     detail_level = st.slider("Detail Level", 1, 10, 5)
-
+    
     if st.button("Generate Notes"):
         if links:
             with st.spinner("Loading transcripts..."):
@@ -140,6 +101,6 @@ def main():
                 file_name="Generated_Notes.pdf",
                 mime="application/pdf"
             )
-
+    add_custom_html()
 if __name__ == "__main__":
     main()

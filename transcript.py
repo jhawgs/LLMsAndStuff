@@ -9,6 +9,8 @@ from io import BytesIO
 from fpdf import FPDF
 from custom_css import add_custom_css
 from custom_html import add_custom_html
+from audio_extract import extract_audio
+
 
 API_KEY = ""
 
@@ -18,6 +20,14 @@ st.set_page_config(
     page_title="Chalkboard.ai",
     layout="centered"
 )
+
+def transcribeVideo(path):
+    convertV2A(path)
+    text = transcribe_local_audio("./outputAudio.mp3")
+    print(text)
+
+def convertV2A(inputVideoFile):
+    extract_audio(input_path=inputVideoFile, output_path="./outputAudio.mp3")
 
 def transcribe_local_audio(path):
     reader = AssemblyAIAudioTranscriptReader(file_path=path, api_key=API_KEY)
@@ -46,6 +56,8 @@ def save_as_pdf(text):
 
 def main():
     # Add custom CSS
+    transcribeVideo("/Users/davidstutz/Desktop/LLMsAndStuff/stanml.mp4")
+    '''
     add_custom_css()
 
     st.title("Chalkboard.ai")
@@ -109,5 +121,6 @@ def main():
                 mime="application/pdf"
             )
     add_custom_html()
+    '''
 if __name__ == "__main__":
     main()

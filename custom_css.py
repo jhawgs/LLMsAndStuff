@@ -9,6 +9,7 @@ def add_custom_css():
         background-color: #1b1b1b;  /* Dark background for the chalkboard effect */
         color: #f5f5f5;  /* Light chalk-like color for text */
         font-family: 'Permanent Marker', cursive;  /* Chalk-like font */
+        cursor: url('chalk_cursor.png'), auto;  /* Custom cursor */
     }
     .stTextArea, .stSlider, .stButton, .stTextInput, .stTitle, .stHeader, .stMarkdown {
         color: #f5f5f5;  /* Chalk-like color for text */

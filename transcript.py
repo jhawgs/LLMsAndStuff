@@ -98,8 +98,12 @@ def main():
 
     if st.button("Generate Notes"):
         documents = []
+        sources = youtube_links[:]
+        
         if uploaded_file:
             documents.append(transcribeVideo(uploaded_file))
+            sources.append(uploaded_file.name)
+
         if youtube_links:
             loader = YoutubeTranscriptReader()
             youtube_documents = loader.load_data(ytlinks=youtube_links)
@@ -107,10 +111,13 @@ def main():
 
         if documents:
             def doc_to_text(doc):
-                return doc[0].text
+                if isinstance(doc, list) and len(doc) > 0 and hasattr(doc[0], 'text'):
+                    return doc[0].text
+                return str(doc)  # Fallback to string representation if structure is unexpected
 
             # Create DataFrame
-            df = pd.DataFrame({"source": youtube_links + [uploaded_file.name], "doc": list(map(doc_to_text, documents))})
+            df = pd.DataFrame({"source": sources, "doc": list(map(doc_to_text, documents))})
+            st.write("DataFrame created:", df)
             df.to_csv("./docs.csv")
 
             # Generate notes using ollama_interface

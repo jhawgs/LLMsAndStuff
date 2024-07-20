@@ -1,4 +1,5 @@
 from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
+from llama_index.readers.assemblyai import AssemblyAIAudioTranscriptReader
 import pandas as pd
 from llama_index.core.llama_pack import download_llama_pack
 from ollama_interface import gen
@@ -9,12 +10,18 @@ from fpdf import FPDF
 from custom_css import add_custom_css
 from custom_html import add_custom_html
 
+API_KEY = ""
+
 # Set page configuration
 st.set_page_config(
     page_icon="📔",
     page_title="Chalkboard.ai",
     layout="centered"
 )
+
+def transcribe_local_audio(path):
+    reader = AssemblyAIAudioTranscriptReader(file_path=path, api_key=API_KEY)
+    return reader.load_data()
 
 # Function to save text as .docx
 def save_as_docx(text):
